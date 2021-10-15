@@ -22,7 +22,7 @@ const long ignoreMotionTime = 5*60*1000;
 int besucherzahler = 0;
 #define halloFile 10                  // Datei, die bei Bewegung gespielt werden soll
 #define byFiles 4                     // Anzahl der Datein zur verabschiedung (Kommen nach dem Hallo File)
-#define normalFiles 10                // exlusive diese Zahl
+#define normalFiles 10                // Anzahl NormaleDatein, exlusive diese Zahl
 #define debounceValue 1000
 
 // Init ESP Now with fallback
