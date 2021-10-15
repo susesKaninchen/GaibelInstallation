@@ -16,6 +16,9 @@ uint8_t data = 0;
 int buttonState = 0;         // variable for reading the pushbutton status
 const int LaserPin = 18;     // the number of the pushbutton pin
 const int LaserPin_1 = 19;     // the number of the pushbutton pin
+const int MotionSensorPin = 21;     // the number of the pushbutton pin
+long timestamp = 0;
+const long ignoreMotionTime = 5*60*1000;
 int besucherzahler = 0;
 #define halloFile 10
 #define maxFiles 10// exlusive diese Zahl
@@ -214,6 +217,7 @@ void sendData() {
 void setup() {
   pinMode(LaserPin, INPUT_PULLUP);
   pinMode(LaserPin_1, INPUT_PULLUP);
+  pinMode(MotionSensorPin, INPUT);
   Serial.begin(115200);
   WiFi.mode(WIFI_STA);
   Serial.println("ESPNow/Multi-Slave/Master Example");
@@ -243,6 +247,7 @@ void checkLaser() {
       // debounce
       delay(debounceValue);
     }
+    timestamp = millis();
   }
 }
 
@@ -271,5 +276,12 @@ void loop() {
       // debounce
       delay(debounceValue);
     }
-  } 
+    timestamp = millis();
+  }
+  if(digitalRead(MotionSensorPin)==HIGH && ignoreMotionTime + timestamp < millis()) {
+    timestamp = millis();
+    Serial.println("Movement detected.");
+    data = halloFile;
+    sendData();
+  }
 }
