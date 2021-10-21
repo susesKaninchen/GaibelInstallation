@@ -2,7 +2,7 @@
 #include <WiFi.h>
 
 // Global copy of slave
-#define NUMSLAVES 5
+#define NUMSLAVES 8
 esp_now_peer_info_t slavesL[NUMSLAVES] = {};
 int SlaveCntL = 0;
 esp_now_peer_info_t slavesR[NUMSLAVES] = {};
@@ -11,14 +11,14 @@ int SlaveCntR = 0;
 #define CHANNEL 0
 #define PRINTSCANRESULTS 0
 
-uint8_t data = 0;
+int data = 0;
 // variables will change:
 int buttonState = 0;         // variable for reading the pushbutton status
 const int LaserPin = 18;     // the number of the pushbutton pin
 const int LaserPin_1 = 19;     // the number of the pushbutton pin
 const int MotionSensorPin = 21;     // the number of the pushbutton pin
 long timestamp = 0;
-const long ignoreMotionTime = 5*60*1000;
+const long ignoreMotionTime = 5*60*1000; // 1000 Anzahl von millisekunden in einer Sekunde, 60 Sekunden in einer Minute, 5 Anzahl an Minuten zu warten
 int besucherzahler = 0;
 #define halloFile 10                  // Datei, die bei Bewegung gespielt werden soll
 #define byFiles 4                     // Anzahl der Datein zur verabschiedung (Kommen nach dem Hallo File)
@@ -72,8 +72,7 @@ void ScanForSlave() {
         slavesL[SlaveCntL].channel = CHANNEL; // pick a channel
         slavesL[SlaveCntL].encrypt = 0; // no encryption
         SlaveCntL++;
-      }
-      if (SSID.indexOf("Right") == 0) {
+      } else if (SSID.indexOf("Right") == 0) {
         Serial.print(i + 1); Serial.print(": "); Serial.print(SSID); Serial.print(" ["); Serial.print(BSSIDstr); Serial.print("]"); Serial.print(" ("); Serial.print(RSSI); Serial.print(")"); Serial.println("");
         int mac[6];
         if ( 6 == sscanf(BSSIDstr.c_str(), "%x:%x:%x:%x:%x:%x",  &mac[0], &mac[1], &mac[2], &mac[3], &mac[4], &mac[5] ) ) {
@@ -180,7 +179,7 @@ void brodcast(){
       Serial.print("Sending: ");
       Serial.println(data);
     }
-    esp_err_t result = esp_now_send(peer_addr, &data, sizeof(data));
+    esp_err_t result = esp_now_send(peer_addr, (uint8_t *) &data, sizeof(data));
     printErrorESP(result);
   }
   for (int i = 0; i < SlaveCntR; i++) {
@@ -189,7 +188,7 @@ void brodcast(){
       Serial.print("Sending: ");
       Serial.println(data);
     }
-    esp_err_t result = esp_now_send(peer_addr, &data, sizeof(data));
+    esp_err_t result = esp_now_send(peer_addr, (uint8_t *) &data, sizeof(data));
     printErrorESP(result);
   }
 }
@@ -202,7 +201,7 @@ void sendData() {
     Serial.println(slavesL[i].peer_addr[5]);
     Serial.print("Sending: ");
     Serial.println(data);
-    esp_err_t result = esp_now_send(peer_addr, &data, sizeof(data));
+    esp_err_t result = esp_now_send(peer_addr, (uint8_t *) &data, sizeof(data));
     printErrorESP(result);
   }else {
     int i = random(0,SlaveCntR);
@@ -210,7 +209,7 @@ void sendData() {
     Serial.println(slavesR[i].peer_addr[5]);
     Serial.print("Sending: ");
     Serial.println(data);
-    esp_err_t result = esp_now_send(peer_addr, &data, sizeof(data));
+    esp_err_t result = esp_now_send(peer_addr, (uint8_t *) &data, sizeof(data));
     printErrorESP(result);
   }
 }
@@ -269,10 +268,10 @@ void loop() {
         data = random(1, normalFiles);
       }
       sendData();
-      buttonState = digitalRead(LaserPin);
+      buttonState = digitalRead(LaserPin_1);
       while (buttonState == LOW) {
         delay(10);
-        buttonState = digitalRead(LaserPin);
+        buttonState = digitalRead(LaserPin_1);
       }
       // debounce
       delay(debounceValue);
