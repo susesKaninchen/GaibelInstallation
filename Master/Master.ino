@@ -17,9 +17,13 @@ int buttonState = 0;         // variable for reading the pushbutton status
 const int LaserPin = 18;     // the number of the pushbutton pin
 const int LaserPin_1 = 19;     // the number of the pushbutton pin
 const int MotionSensorPin = 21;     // the number of the pushbutton pin
+const int ChaosPin = 22;     // the number of the chaos pin
+
 long timestamp = 0;
 const long ignoreMotionTime = 5*60*1000; // 1000 Anzahl von millisekunden in einer Sekunde, 60 Sekunden in einer Minute, 5 Anzahl an Minuten zu warten
 int besucherzahler = 0;
+boolean chaosmode = false;
+#define kriegslied 5                  // Nummer des kriegslied
 #define halloFile 10                  // Datei, die bei Bewegung gespielt werden soll
 #define byFiles 4                     // Anzahl der Datein zur verabschiedung (Kommen nach dem Hallo File)
 #define normalFiles 10                // Anzahl NormaleDatein, exlusive diese Zahl
@@ -218,6 +222,8 @@ void setup() {
   pinMode(LaserPin, INPUT_PULLUP);
   pinMode(LaserPin_1, INPUT_PULLUP);
   pinMode(MotionSensorPin, INPUT);
+  pinMode(ChaosPin, INPUT_PULLUP);
+  
   Serial.begin(115200);
   WiFi.mode(WIFI_STA);
   Serial.println("ESPNow/Multi-Slave/Master Example");
@@ -234,11 +240,17 @@ void checkLaser() {
     if (SlaveCntL > 0 || SlaveCntR > 0 ) {
       manageSlave();
       // Stop
-      data = 0;
-      brodcast();
+      if (!chaosmode){
+        data = 0;
+        brodcast();
+      }
       // Send new Song
       data = random(1, normalFiles);
-      sendData();
+      if (kriegslied == data) {
+        brodcast();
+      }else {
+        sendData();
+      }
       buttonState = digitalRead(LaserPin);
       while (buttonState == LOW) {
         delay(10);
@@ -252,6 +264,8 @@ void checkLaser() {
 }
 
 void loop() {
+  buttonState = digitalRead(ChaosPin);
+  chaosmode = buttonState;
   checkLaser();
   // Check EingangAusgang
   buttonState = digitalRead(LaserPin_1);
@@ -260,14 +274,20 @@ void loop() {
     besucherzahler++;
     if (SlaveCntL > 0 || SlaveCntR > 0 ) {
       manageSlave();
-      data = 0;
-      brodcast();
+      if (!chaosmode){
+        data = 0;
+        brodcast();
+      }
       if (besucherzahler%2) {
         data = random(halloFile + 1, halloFile + 1 + byFiles);
       } else {
         data = random(1, normalFiles);
       }
-      sendData();
+      if (kriegslied == data) {
+        brodcast();
+      }else {
+        sendData();
+      }
       buttonState = digitalRead(LaserPin_1);
       while (buttonState == LOW) {
         delay(10);
