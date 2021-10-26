@@ -9,7 +9,7 @@ esp_now_peer_info_t slavesR[NUMSLAVES] = {};
 int SlaveCntR = 0;
 
 #define CHANNEL 0
-#define PRINTSCANRESULTS 0
+#define PRINTSCANRESULTS 1
 
 int data = 0;
 // variables will change:
@@ -20,14 +20,16 @@ const int MotionSensorPin = 21;     // the number of the pushbutton pin
 const int ChaosPin = 22;     // the number of the chaos pin
 
 long timestamp = 0;
-const long ignoreMotionTime = 5*60*1000; // 1000 Anzahl von millisekunden in einer Sekunde, 60 Sekunden in einer Minute, 5 Anzahl an Minuten zu warten
+const long ignoreMotionTime = 1*60*1000; // 1000 Anzahl von millisekunden in einer Sekunde, 60 Sekunden in einer Minute, 5 Anzahl an Minuten zu warten
 int besucherzahler = 0;
 boolean chaosmode = false;
-#define kriegslied 5                  // Nummer des kriegslied
-#define halloFile 10                  // Datei, die bei Bewegung gespielt werden soll
-#define byFiles 4                     // Anzahl der Datein zur verabschiedung (Kommen nach dem Hallo File)
+#define kriegslied 9                  // Nummer des kriegslied
 #define normalFiles 10                // Anzahl NormaleDatein, exlusive diese Zahl
-#define debounceValue 1000
+#define byFile 20                     // Datei, die bei Lichtschranke gespielt werden soll
+#define byFiles 2                     // Anzahl der Datein zur verabschiedung (Kommen nach dem Hallo File)
+#define bewegungsSong 25
+#define anzahlBewegung 2
+#define debounceValue 1000            // Verzögerrung nach lichtschranke
 
 // Init ESP Now with fallback
 void InitESPNow() {
@@ -200,7 +202,9 @@ void brodcast(){
 // send data
 void sendData() {
   if (data%2){
+    Serial.print("Left: ");
     int i = random(0,SlaveCntL);
+    Serial.println(i);
     const uint8_t *peer_addr = slavesL[i].peer_addr;
     Serial.println(slavesL[i].peer_addr[5]);
     Serial.print("Sending: ");
@@ -208,7 +212,9 @@ void sendData() {
     esp_err_t result = esp_now_send(peer_addr, (uint8_t *) &data, sizeof(data));
     printErrorESP(result);
   }else {
+    Serial.print("Right: ");
     int i = random(0,SlaveCntR);
+    Serial.println(i);
     const uint8_t *peer_addr = slavesR[i].peer_addr;
     Serial.println(slavesR[i].peer_addr[5]);
     Serial.print("Sending: ");
@@ -279,7 +285,7 @@ void loop() {
         brodcast();
       }
       if (besucherzahler%2) {
-        data = random(halloFile + 1, halloFile + 1 + byFiles);
+        data = random(byFile, byFile + byFiles);
       } else {
         data = random(1, normalFiles);
       }
@@ -298,10 +304,10 @@ void loop() {
     }
     timestamp = millis();
   }
-  if(digitalRead(MotionSensorPin)==HIGH && ignoreMotionTime + timestamp < millis()) {
+  if(digitalRead(MotionSensorPin)==LOW && ignoreMotionTime + timestamp < millis()) {
     timestamp = millis();
     Serial.println("Movement detected.");
-    data = halloFile;
+    data = random(bewegungsSong, bewegungsSong+anzahlBewegung);
     sendData();
   }
 }
